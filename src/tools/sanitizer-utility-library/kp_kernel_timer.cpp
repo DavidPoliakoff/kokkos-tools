@@ -74,9 +74,9 @@ extern "C" void kokkosp_init_library(const int loadSeq,
   unpoisonFunction = *((poisonFunctionType*)&unpoisonFunctionHandle);
 
   space_map["Host"] = std::set<NamedPointer>();
-  space_map["HBW"] = std::set<NamedPointer>();
+  space_map["CudaSim"] = std::set<NamedPointer>();
   poisonSpace("Host");
-  poisonSpace("HBW");
+  poisonSpace("CudaSim");
   
 }
 
@@ -86,13 +86,15 @@ extern "C" void kokkosp_finalize_library() {
 
 
 extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devID, uint64_t* kID) {
-  std::cout << "Running kernel on device "<<devID<<std::endl;
+  std::cout << "Running kernel " << name <<" on device "<<devID<<std::endl;
   kokkos_stack.push_back(name);
   if(devID == 0) {
-    poisonSpace("HBW");
+    poisonSpace("CudaSim");
+    unpoisonSpace("Host");
   }
   else if (devID==1){
       poisonSpace("Host");
+      unpoisonSpace("CudaSim");
   }
   *kID = devID;
 }
@@ -101,7 +103,7 @@ extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
   uint64_t devID = kID;
   std::string name = kokkos_stack.back();
   if(devID == 0) {
-    unpoisonSpace("HBW");
+    unpoisonSpace("CudaSim");
   }
   else if (devID==1){
     unpoisonSpace("Host");
@@ -146,6 +148,7 @@ extern "C" void kokkosp_deallocate_data(const SpaceHandle space, const char* lab
 }
 
 extern "C" void kokkosp_allocate_data(const SpaceHandle space, const char* label, const void* const ptr_raw, const uint64_t size) {
+  std::cout << "Allocating in space {"<<space.name<<"}\n";
   auto ptr = reinterpret_cast<std::uintptr_t>(ptr_raw);
   std::size_t length = strlen(label);
   auto key = NamedPointer { ptr, label, size, space };
