@@ -89,12 +89,10 @@ extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devI
   std::cout << "Running kernel " << name <<" on device "<<devID<<std::endl;
   kokkos_stack.push_back(name);
   if(devID == 0) {
-    poisonSpace("CudaSim");
     unpoisonSpace("Host");
   }
   else if (devID==1){
-      poisonSpace("Host");
-      unpoisonSpace("CudaSim");
+    unpoisonSpace("CudaSim");
   }
   *kID = devID;
 }
@@ -103,10 +101,10 @@ extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
   uint64_t devID = kID;
   std::string name = kokkos_stack.back();
   if(devID == 0) {
-    unpoisonSpace("CudaSim");
+    poisonSpace("Host");
   }
   else if (devID==1){
-    unpoisonSpace("Host");
+    poisonSpace("CudaSim");
   }
 	kokkos_stack.pop_back();
 }
