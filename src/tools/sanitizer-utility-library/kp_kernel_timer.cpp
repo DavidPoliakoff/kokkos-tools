@@ -98,8 +98,7 @@ extern "C" void kokkosp_begin_parallel_for(const char* name, const uint32_t devI
 }
 
 extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
-  uint64_t devID = kID;
-  std::string name = kokkos_stack.back();
+  auto devID = kID;
   if(devID == 0) {
     poisonSpace("Host");
   }
@@ -110,18 +109,50 @@ extern "C" void kokkosp_end_parallel_for(const uint64_t kID) {
 }
 
 extern "C" void kokkosp_begin_parallel_scan(const char* name, const uint32_t devID, uint64_t* kID) {
+  std::cout << "Running kernel " << name <<" on device "<<devID<<std::endl;
+  kokkos_stack.push_back(name);
+  if(devID == 0) {
+    unpoisonSpace("Host");
+  }
+  else if (devID==1){
+    unpoisonSpace("CudaSim");
+  }
+  *kID = devID;
   kokkos_stack.push_back(name);
 }
 
 extern "C" void kokkosp_end_parallel_scan(const uint64_t kID) {
+  auto devID = kID;
+  if(devID == 0) {
+    poisonSpace("Host");
+  }
+  else if (devID==1){
+    poisonSpace("CudaSim");
+  }
 	kokkos_stack.pop_back();
 }
 
 extern "C" void kokkosp_begin_parallel_reduce(const char* name, const uint32_t devID, uint64_t* kID) {
+  std::cout << "Running kernel " << name <<" on device "<<devID<<std::endl;
+  kokkos_stack.push_back(name);
+  if(devID == 0) {
+    unpoisonSpace("Host");
+  }
+  else if (devID==1){
+    unpoisonSpace("CudaSim");
+  }
+  *kID = devID;
   kokkos_stack.push_back(name);
 }
 
 extern "C" void kokkosp_end_parallel_reduce(const uint64_t kID) {
+  auto devID = kID;
+  if(devID == 0) {
+    poisonSpace("Host");
+  }
+  else if (devID==1){
+    poisonSpace("CudaSim");
+  }
 	kokkos_stack.pop_back();
 }
 
