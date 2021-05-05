@@ -59,18 +59,19 @@ static std::unordered_map<const char*, craypat_range_identifier> range_map;
 static std::stack<craypat_region_stack_identifier> region_range_stack;
 craypat_range_identifier get_new_range_identifier(const char *name) {
     // TODO: insert real implementation here
-    static craypat_region_stack_identifier id;
-    auto fnd = range_map.find(name);
-    if(fnd==range_map.end()){
-      fnd->second = ++id;
-    }
-    PAT_REGION_BEGIN(fnd->second, name)
-    return fnd->second;
+    //static craypat_region_stack_identifier id;
+    //auto fnd = range_map.find(name);
+    //if(fnd==range_map.end()){
+    //  fnd->second = ++id;
+    //}
+    PAT_MAGICREGION_BEGIN(name);
+    return 0;
+    //return fnd->second;
 }
 
 void end_the_thing(craypat_range_identifier id) {
     // TODO: insert real implementation here
-    PAT_REGION_END(id);
+    PAT_MAGICREGION_END();
 }
 
 extern "C" void kokkosp_init_library(const int loadSeq,
