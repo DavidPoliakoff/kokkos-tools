@@ -122,6 +122,7 @@ enum StackKind {
   STACK_FOR,
   STACK_REDUCE,
   STACK_SCAN,
+  STACK_FENCE,
   STACK_REGION,
   STACK_COPY
 };
@@ -170,6 +171,7 @@ struct StackNode {
   std::set<StackNode> children;
   double total_runtime;
   double total_kokkos_runtime;
+  double total_fence_time;
   double max_runtime;
   double avg_runtime;
   std::int64_t number_of_calls;
@@ -180,6 +182,7 @@ struct StackNode {
     name(std::move(name_in)),
     kind(kind_in),
     total_runtime(0.),
+    total_fence_time(0.),
     total_kokkos_runtime(0.),
     number_of_calls(0),
     total_number_of_kernel_calls(0) {
@@ -219,9 +222,10 @@ struct StackNode {
   void end(Now const& end_time) {
     auto runtime = (end_time - start_time);
     total_runtime += runtime;
+   
   }
   void adopt() {
-    if (this->kind != STACK_REGION) {
+    if ((this->kind != STACK_REGION) && (this->kind != STACK_FENCE)){
       this->total_kokkos_runtime += this->total_runtime;
     }
     for (auto& child : this->children) {
@@ -309,6 +313,7 @@ struct StackNode {
         case STACK_FOR: os << "\"for\""; break;
         case STACK_REDUCE: os << "\"reduce\""; break;
         case STACK_SCAN: os << "\"scan\""; break;
+        case STACK_FENCE: os << "\"fence\""; break;
         case STACK_REGION: os << "\"region\""; break;
         case STACK_COPY: os << "\"copy\""; break;
       };
@@ -373,6 +378,7 @@ struct StackNode {
         case STACK_FOR: os << " [for]"; break;
         case STACK_REDUCE: os << " [reduce]"; break;
         case STACK_SCAN: os << " [scan]"; break;
+        case STACK_FENCE: os << " [fence]"; break;
         case STACK_REGION: os << " [region]"; break;
         case STACK_COPY: os << " [copy]"; break;
       };
@@ -752,6 +758,12 @@ extern "C" void kokkosp_begin_parallel_scan(
   *kernid = global_state->begin_kernel(name, STACK_SCAN);
 }
 
+extern "C" void kokkosp_begin_fence(
+    const char* name, std::uint32_t devid, std::uint64_t* kernid) {
+  (void) devid;
+  *kernid = global_state->begin_kernel(name, STACK_FENCE);
+}
+
 extern "C" void kokkosp_end_parallel_for(std::uint64_t kernid) {
   global_state->end_kernel(kernid);
 }
@@ -761,6 +773,10 @@ extern "C" void kokkosp_end_parallel_reduce(std::uint64_t kernid) {
 }
 
 extern "C" void kokkosp_end_parallel_scan(std::uint64_t kernid) {
+  global_state->end_kernel(kernid);
+}
+
+extern "C" void kokkosp_end_fence(std::uint64_t kernid) {
   global_state->end_kernel(kernid);
 }
 
